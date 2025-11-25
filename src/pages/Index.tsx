@@ -1,11 +1,98 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ForecastChart } from "@/components/ForecastChart";
+import { FeatureImportance } from "@/components/FeatureImportance";
+import { InputPanel } from "@/components/InputPanel";
+import { MetricsPanel } from "@/components/MetricsPanel";
+import { WhatIfScenario } from "@/components/WhatIfScenario";
+import { Droplets, TrendingUp, Brain, Settings } from "lucide-react";
 
 const Index = () => {
+  const [activeHorizon, setActiveHorizon] = useState<1 | 3 | 7>(1);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary p-2">
+                <Droplets className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-foreground">
+                  Reservoir Temperature Forecast
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Interpretable ML for Outflow Water Temperature Prediction
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Model: GAM v2.1</span>
+              <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid gap-6 lg:grid-cols-12">
+          {/* Left Panel - Inputs */}
+          <div className="lg:col-span-4">
+            <InputPanel />
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Metrics */}
+            <MetricsPanel activeHorizon={activeHorizon} />
+
+            {/* Forecast Chart */}
+            <Card className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Temperature Forecast
+                  </h2>
+                </div>
+                <Tabs value={activeHorizon.toString()} onValueChange={(v) => setActiveHorizon(Number(v) as 1 | 3 | 7)}>
+                  <TabsList>
+                    <TabsTrigger value="1">1 Day</TabsTrigger>
+                    <TabsTrigger value="3">3 Days</TabsTrigger>
+                    <TabsTrigger value="7">7 Days</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              <ForecastChart horizon={activeHorizon} />
+            </Card>
+
+            {/* Interpretability */}
+            <Card className="p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <Brain className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">
+                  Feature Importance & Drivers
+                </h2>
+              </div>
+              <FeatureImportance />
+            </Card>
+
+            {/* What-If Scenarios */}
+            <Card className="p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">
+                  What-If Scenarios
+                </h2>
+              </div>
+              <WhatIfScenario />
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
