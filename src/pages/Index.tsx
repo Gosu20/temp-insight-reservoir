@@ -1,15 +1,29 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ForecastChart } from "@/components/ForecastChart";
 import { FeatureImportance } from "@/components/FeatureImportance";
 import { InputPanel } from "@/components/InputPanel";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { WhatIfScenario } from "@/components/WhatIfScenario";
-import { Droplets, TrendingUp, Brain, Settings } from "lucide-react";
+import { Droplets, TrendingUp, Brain, Settings, Download } from "lucide-react";
+import { generatePythonBackend } from "@/lib/pythonBackendGenerator";
+import { toast } from "sonner";
 
 const Index = () => {
   const [activeHorizon, setActiveHorizon] = useState<1 | 3 | 7>(1);
+
+  const handleDownloadBackend = async () => {
+    toast.info("Generating Python backend...");
+    try {
+      await generatePythonBackend();
+      toast.success("Backend code downloaded successfully!");
+    } catch (error) {
+      toast.error("Failed to generate backend code");
+      console.error(error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -30,9 +44,20 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Model: GAM v2.1</span>
-              <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={handleDownloadBackend} 
+                variant="outline" 
+                size="sm"
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export Python Backend
+              </Button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Model: GAM v2.1</span>
+                <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+              </div>
             </div>
           </div>
         </div>
