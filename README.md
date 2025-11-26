@@ -1,73 +1,71 @@
-# Welcome to your Lovable project
+Project Overview
 
-## Project info
+This is a machine learning–based prediction app built as my college project.
+The model predicts outcomes based on the input features given by the user.
+The project includes:
+	•	A trained ML model
+	•	A backend API for predictions
+	•	A clean, responsive frontend
+	•	Deployment using Vercel
 
-**URL**: https://lovable.dev/projects/93f9921e-ec23-4368-9172-28c3626e3db8
+The aim is to demonstrate how ML models can be deployed as real web apps.
 
-## How can I edit this code?
+⸻
 
-There are several ways of editing your application.
+📊 Machine Learning Details
 
-**Use Lovable**
+Model Used
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/93f9921e-ec23-4368-9172-28c3626e3db8) and start prompting.
+The app uses a Gradient Boosting Machine (GBM) model.
 
-Changes made via Lovable will be committed automatically to this repo.
+Why GBM?
+	•	Works very well on tabular (spreadsheet-type) data
+	•	Handles nonlinear patterns
+	•	Usually more accurate than simple models
+	•	Used in many industry ML tasks
 
-**Use your preferred IDE**
+How it works (simple explanation)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+GBM builds many small decision trees, where:
+	•	Tree 1 makes the first prediction
+	•	Tree 2 fixes the mistakes of Tree 1
+	•	Tree 3 fixes the mistakes of Tree 2
+	•	And so on…
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Finally, all trees together make one strong prediction.
 
-Follow these steps:
+⸻
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+🧠 Training Process (Simple Explanation)
+	1.	Data is cleaned and prepared
+	2.	Model learns patterns using Gradient Boosting
+	3.	Model is tested for accuracy
+	4.	Best-performing model is saved
+	5.	This model is connected to the web app for live predictions
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+⸻
 
-# Step 3: Install the necessary dependencies.
-npm i
+🖥 Tech Stack
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Frontend
+	•	HTML
+	•	CSS
+	•	JavaScript
+	•	Responsive UI
 
-**Edit a file directly in GitHub**
+Backend
+	•	Python
+	•	FastAPI / Flask (based on Lovable’s setup)
+	•	Pickle joblib for loading ML model
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+ML Framework
+	•	Scikit-learn (sklearn)
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/93f9921e-ec23-4368-9172-28c3626e3db8) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Deployment
+	•	Vercel (frontend)
+	•	Model served via API
+  How the App Works
+	1.	User enters values in the form
+	2.	The frontend sends the inputs to the backend
+	3.	ML model processes the data and predicts
+	4.	Result is shown instantly on the screen
