@@ -1,7 +1,4 @@
-import { Card } from "@/components/ui/card";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -10,31 +7,57 @@ import {
   ResponsiveContainer,
   Area,
   ComposedChart,
+  Line,
 } from "recharts";
+import { useReservoir } from "@/contexts/ReservoirContext";
+import { useMemo } from "react";
 
-interface ForecastChartProps {
-  horizon: 1 | 3 | 7;
-}
+export const ForecastChart = () => {
+  const { inputs, predictions, activeHorizon } = useReservoir();
 
-export const ForecastChart = ({ horizon }: ForecastChartProps) => {
-  const generateData = () => {
-    const baseTemp = 18.5;
+  const data = useMemo(() => {
+    const baseTemp = inputs.tempOut;
+    
+    // Generate historical data (last 7 days with some variation)
     const historical = Array.from({ length: 7 }, (_, i) => ({
       day: `Day ${i - 6}`,
-      actual: baseTemp + Math.sin(i * 0.5) * 1.2 + (Math.random() - 0.5) * 0.3,
+      actual: baseTemp + Math.sin(i * 0.5) * 1.2 - 0.5 + (i * 0.1),
+      predicted: undefined as number | undefined,
+      upper: undefined as number | undefined,
+      lower: undefined as number | undefined,
     }));
 
-    const forecast = Array.from({ length: horizon }, (_, i) => ({
-      day: `Day +${i + 1}`,
-      predicted: baseTemp + 0.4 + i * 0.3 + Math.sin((7 + i) * 0.5) * 1.2,
-      upper: baseTemp + 0.4 + i * 0.3 + Math.sin((7 + i) * 0.5) * 1.2 + 1.5,
-      lower: baseTemp + 0.4 + i * 0.3 + Math.sin((7 + i) * 0.5) * 1.2 - 1.5,
-    }));
+    // Add current day
+    const current = {
+      day: "Today",
+      actual: baseTemp,
+      predicted: undefined as number | undefined,
+      upper: undefined as number | undefined,
+      lower: undefined as number | undefined,
+    };
 
-    return [...historical, ...forecast];
-  };
+    // Generate forecast based on actual prediction model
+    const pred = predictions[activeHorizon];
+    const forecast = Array.from({ length: activeHorizon }, (_, i) => {
+      // Interpolate between current and final prediction
+      const progress = (i + 1) / activeHorizon;
+      const tempChange = pred.change * progress;
+      const predictedTemp = baseTemp + tempChange;
+      
+      // Uncertainty grows with horizon
+      const uncertainty = 0.5 + (i + 1) * 0.3;
+      
+      return {
+        day: `Day +${i + 1}`,
+        actual: undefined as number | undefined,
+        predicted: Number(predictedTemp.toFixed(1)),
+        upper: Number((predictedTemp + uncertainty).toFixed(1)),
+        lower: Number((predictedTemp - uncertainty).toFixed(1)),
+      };
+    });
 
-  const data = generateData();
+    return [...historical, current, ...forecast];
+  }, [inputs.tempOut, predictions, activeHorizon]);
 
   return (
     <ResponsiveContainer width="100%" height={350}>
@@ -48,6 +71,7 @@ export const ForecastChart = ({ horizon }: ForecastChartProps) => {
         <YAxis
           stroke="hsl(var(--muted-foreground))"
           fontSize={12}
+          domain={['dataMin - 2', 'dataMax + 2']}
           label={{
             value: "Temperature (°C)",
             angle: -90,
@@ -61,46 +85,53 @@ export const ForecastChart = ({ horizon }: ForecastChartProps) => {
             border: "1px solid hsl(var(--border))",
             borderRadius: "var(--radius)",
           }}
+          formatter={(value: number | undefined) => 
+            value !== undefined ? [`${value}°C`, ""] : ["-", ""]
+          }
         />
         <Legend />
         
-        {/* Confidence interval */}
+        {/* Confidence interval area */}
         <Area
           type="monotone"
           dataKey="upper"
           stroke="none"
           fill="hsl(var(--primary))"
-          fillOpacity={0.1}
-          name="Upper CI"
+          fillOpacity={0.15}
+          name="95% CI Upper"
+          connectNulls={false}
         />
         <Area
           type="monotone"
           dataKey="lower"
           stroke="none"
-          fill="hsl(var(--primary))"
-          fillOpacity={0.1}
-          name="Lower CI"
+          fill="hsl(var(--background))"
+          fillOpacity={1}
+          name="95% CI Lower"
+          connectNulls={false}
         />
         
-        {/* Historical actual */}
+        {/* Historical actual values */}
         <Line
           type="monotone"
           dataKey="actual"
           stroke="hsl(var(--chart-1))"
           strokeWidth={2}
-          dot={{ r: 3 }}
+          dot={{ r: 3, fill: "hsl(var(--chart-1))" }}
           name="Historical"
+          connectNulls={false}
         />
         
-        {/* Predicted */}
+        {/* Predicted values */}
         <Line
           type="monotone"
           dataKey="predicted"
           stroke="hsl(var(--accent))"
           strokeWidth={2}
           strokeDasharray="5 5"
-          dot={{ r: 4 }}
+          dot={{ r: 4, fill: "hsl(var(--accent))" }}
           name="Forecast"
+          connectNulls={false}
         />
       </ComposedChart>
     </ResponsiveContainer>
