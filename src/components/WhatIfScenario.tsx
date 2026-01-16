@@ -1,45 +1,12 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Play, RotateCcw } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { RotateCcw } from "lucide-react";
 import { useReservoir } from "@/contexts/ReservoirContext";
 
 export const WhatIfScenario = () => {
-  const { toast } = useToast();
-  const { inputs, currentPrediction } = useReservoir();
-  const [dischargeChange, setDischargeChange] = useState([0]);
-  const [airTempChange, setAirTempChange] = useState([0]);
-  const [storageChange, setStorageChange] = useState([0]);
-
-  const handleRun = () => {
-    // Apply changes to calculate scenario prediction
-    const newDischarge = inputs.discharge * (1 + dischargeChange[0] / 100);
-    const newAirTemp = inputs.airTemp + airTempChange[0];
-    const newStorage = inputs.storage * (1 + storageChange[0] / 100);
-    
-    // Simplified model for scenario analysis
-    const baseTemp = currentPrediction.predicted;
-    const dischargeFactor = -0.02 * dischargeChange[0];
-    const airTempFactor = 0.08 * airTempChange[0];
-    const storageFactor = 0.01 * storageChange[0];
-    
-    const tempChange = dischargeFactor + airTempFactor + storageFactor;
-    const newTemp = baseTemp + tempChange;
-    
-    toast({
-      title: "Scenario Complete",
-      description: `Predicted outflow temperature: ${newTemp.toFixed(1)}°C (${tempChange > 0 ? '+' : ''}${tempChange.toFixed(1)}°C change from baseline)`,
-    });
-  };
-
-  const handleReset = () => {
-    setDischargeChange([0]);
-    setAirTempChange([0]);
-    setStorageChange([0]);
-  };
+  const { inputs, adjustments, updateAdjustment, resetAdjustments, hasForecast, forecastAdjustments } = useReservoir();
 
   return (
     <div className="space-y-6">
@@ -50,19 +17,19 @@ export const WhatIfScenario = () => {
               Discharge Change (%)
             </Label>
             <Badge variant="secondary" className="font-mono">
-              {dischargeChange[0] > 0 ? '+' : ''}{dischargeChange[0]}%
+              {adjustments.dischargeChange > 0 ? '+' : ''}{adjustments.dischargeChange}%
             </Badge>
           </div>
           <Slider
-            value={dischargeChange}
-            onValueChange={setDischargeChange}
+            value={[adjustments.dischargeChange]}
+            onValueChange={([v]) => updateAdjustment('dischargeChange', v)}
             min={-50}
             max={50}
             step={5}
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">
-            Current: {inputs.discharge.toFixed(1)} m³/s → {(inputs.discharge * (1 + dischargeChange[0] / 100)).toFixed(1)} m³/s
+            Base: {inputs.discharge.toFixed(1)} m³/s → Adjusted: {(inputs.discharge * (1 + adjustments.dischargeChange / 100)).toFixed(1)} m³/s
           </p>
         </div>
 
@@ -72,19 +39,19 @@ export const WhatIfScenario = () => {
               Air Temperature Change (°C)
             </Label>
             <Badge variant="secondary" className="font-mono">
-              {airTempChange[0] > 0 ? '+' : ''}{airTempChange[0]}°C
+              {adjustments.airTempChange > 0 ? '+' : ''}{adjustments.airTempChange}°C
             </Badge>
           </div>
           <Slider
-            value={airTempChange}
-            onValueChange={setAirTempChange}
+            value={[adjustments.airTempChange]}
+            onValueChange={([v]) => updateAdjustment('airTempChange', v)}
             min={-10}
             max={10}
             step={0.5}
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">
-            Current: {inputs.airTemp.toFixed(1)}°C → {(inputs.airTemp + airTempChange[0]).toFixed(1)}°C
+            Base: {inputs.airTemp.toFixed(1)}°C → Adjusted: {(inputs.airTemp + adjustments.airTempChange).toFixed(1)}°C
           </p>
         </div>
 
@@ -94,40 +61,43 @@ export const WhatIfScenario = () => {
               Storage Change (%)
             </Label>
             <Badge variant="secondary" className="font-mono">
-              {storageChange[0] > 0 ? '+' : ''}{storageChange[0]}%
+              {adjustments.storageChange > 0 ? '+' : ''}{adjustments.storageChange}%
             </Badge>
           </div>
           <Slider
-            value={storageChange}
-            onValueChange={setStorageChange}
+            value={[adjustments.storageChange]}
+            onValueChange={([v]) => updateAdjustment('storageChange', v)}
             min={-30}
             max={30}
             step={5}
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">
-            Current: {inputs.storage.toFixed(1)} MCM → {(inputs.storage * (1 + storageChange[0] / 100)).toFixed(1)} MCM
+            Base: {inputs.storage.toFixed(1)} MCM → Adjusted: {(inputs.storage * (1 + adjustments.storageChange / 100)).toFixed(1)} MCM
           </p>
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button className="flex-1" onClick={handleRun}>
-          <Play className="mr-2 h-4 w-4" />
-          Run Scenario
-        </Button>
-        <Button variant="outline" onClick={handleReset}>
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Reset
-        </Button>
-      </div>
+      <Button variant="outline" onClick={resetAdjustments} className="w-full">
+        <RotateCcw className="mr-2 h-4 w-4" />
+        Reset Adjustments
+      </Button>
 
       <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Baseline prediction:</strong>{" "}
-          {currentPrediction.predicted}°C. Adjust operational parameters above 
-          to explore their impact on outflow temperature.
+          <strong className="text-foreground">How to use:</strong>{" "}
+          Adjust the sliders above to simulate operational changes, then click{" "}
+          <strong className="text-foreground">"Generate Forecast"</strong> to see 
+          how these changes affect the predicted outflow temperature.
         </p>
+        {hasForecast && forecastAdjustments && (
+          <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
+            <strong className="text-foreground">Last forecast used:</strong>{" "}
+            Discharge {forecastAdjustments.dischargeChange >= 0 ? '+' : ''}{forecastAdjustments.dischargeChange}%, 
+            Air Temp {forecastAdjustments.airTempChange >= 0 ? '+' : ''}{forecastAdjustments.airTempChange}°C, 
+            Storage {forecastAdjustments.storageChange >= 0 ? '+' : ''}{forecastAdjustments.storageChange}%
+          </p>
+        )}
       </div>
     </div>
   );

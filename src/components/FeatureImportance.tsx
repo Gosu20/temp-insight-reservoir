@@ -9,6 +9,7 @@ import {
   Cell,
 } from "recharts";
 import { useReservoir } from "@/contexts/ReservoirContext";
+import { AlertCircle } from "lucide-react";
 
 const categoryColors: Record<string, string> = {
   temporal: "hsl(var(--chart-1))",
@@ -19,27 +20,41 @@ const categoryColors: Record<string, string> = {
 };
 
 export const FeatureImportance = () => {
-  const { featureImportance, inputs } = useReservoir();
+  const { featureImportance, forecastInputs, forecastAdjustments, hasForecast } = useReservoir();
+
+  if (!hasForecast || !featureImportance || !forecastInputs) {
+    return (
+      <div className="flex items-center justify-center h-[300px] bg-muted/30 rounded-lg">
+        <div className="text-center text-muted-foreground">
+          <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">Generate a forecast to see</p>
+          <p className="text-xs mt-1">feature importance analysis</p>
+        </div>
+      </div>
+    );
+  }
 
   // Convert importance to decimal for chart
-  const chartData = featureImportance.map(item => ({
+  const chartData = featureImportance.map((item) => ({
     ...item,
     importanceDecimal: item.importance / 100,
   }));
 
-  // Generate dynamic insight based on current conditions
+  // Generate dynamic insight
   const getInsight = () => {
-    const tempDiff = Math.abs(inputs.airTemp - inputs.tempOut);
+    const tempDiff = Math.abs(
+      forecastInputs.airTemp + (forecastAdjustments?.airTempChange || 0) - forecastInputs.tempOut
+    );
     if (tempDiff > 5) {
-      return `Air temperature is ${inputs.airTemp > inputs.tempOut ? 'above' : 'below'} water temperature by ${tempDiff.toFixed(1)}°C, increasing its influence on the forecast.`;
+      return `Air temperature difference of ${tempDiff.toFixed(1)}°C is significantly influencing the forecast.`;
     }
-    if (inputs.solarRad > 500) {
-      return `High solar radiation (${inputs.solarRad} W/m²) is driving significant surface heating effects.`;
+    if (forecastInputs.solarRad > 500) {
+      return `High solar radiation (${forecastInputs.solarRad} W/m²) is driving surface heating effects.`;
     }
-    if (inputs.discharge < 50) {
-      return `Low discharge rates increase residence time, amplifying storage and thermal stratification effects.`;
+    if (forecastInputs.discharge < 50) {
+      return `Low discharge increases residence time, amplifying thermal stratification effects.`;
     }
-    return `Current outflow temperature (${inputs.tempOut}°C) is the primary predictor due to strong thermal persistence.`;
+    return `Outflow temperature persistence (${forecastInputs.tempOut}°C) is the dominant factor in this forecast.`;
   };
 
   return (
@@ -90,7 +105,10 @@ export const FeatureImportance = () => {
           />
           <Bar dataKey="importanceDecimal" radius={[0, 4, 4, 0]}>
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={categoryColors[entry.category] || "hsl(var(--primary))"} />
+              <Cell
+                key={`cell-${index}`}
+                fill={categoryColors[entry.category] || "hsl(var(--primary))"}
+              />
             ))}
           </Bar>
         </BarChart>
@@ -98,8 +116,7 @@ export const FeatureImportance = () => {
 
       <div className="rounded-lg bg-muted/50 p-3">
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Key Insight:</strong>{" "}
-          {getInsight()}
+          <strong className="text-foreground">Key Insight:</strong> {getInsight()}
         </p>
       </div>
     </div>
