@@ -5,28 +5,40 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Play, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useReservoir } from "@/contexts/ReservoirContext";
 
 export const WhatIfScenario = () => {
   const { toast } = useToast();
-  const [discharge, setDischarge] = useState([0]);
-  const [airTemp, setAirTemp] = useState([0]);
-  const [storage, setStorage] = useState([0]);
+  const { inputs, currentPrediction } = useReservoir();
+  const [dischargeChange, setDischargeChange] = useState([0]);
+  const [airTempChange, setAirTempChange] = useState([0]);
+  const [storageChange, setStorageChange] = useState([0]);
 
   const handleRun = () => {
-    const tempChange =
-      discharge[0] * 0.02 + airTemp[0] * 0.08 - storage[0] * 0.01;
-    const newTemp = (18.9 + tempChange).toFixed(1);
+    // Apply changes to calculate scenario prediction
+    const newDischarge = inputs.discharge * (1 + dischargeChange[0] / 100);
+    const newAirTemp = inputs.airTemp + airTempChange[0];
+    const newStorage = inputs.storage * (1 + storageChange[0] / 100);
+    
+    // Simplified model for scenario analysis
+    const baseTemp = currentPrediction.predicted;
+    const dischargeFactor = -0.02 * dischargeChange[0];
+    const airTempFactor = 0.08 * airTempChange[0];
+    const storageFactor = 0.01 * storageChange[0];
+    
+    const tempChange = dischargeFactor + airTempFactor + storageFactor;
+    const newTemp = baseTemp + tempChange;
     
     toast({
       title: "Scenario Complete",
-      description: `Predicted outflow temperature: ${newTemp}°C (${tempChange > 0 ? '+' : ''}${tempChange.toFixed(1)}°C change)`,
+      description: `Predicted outflow temperature: ${newTemp.toFixed(1)}°C (${tempChange > 0 ? '+' : ''}${tempChange.toFixed(1)}°C change from baseline)`,
     });
   };
 
   const handleReset = () => {
-    setDischarge([0]);
-    setAirTemp([0]);
-    setStorage([0]);
+    setDischargeChange([0]);
+    setAirTempChange([0]);
+    setStorageChange([0]);
   };
 
   return (
@@ -38,17 +50,20 @@ export const WhatIfScenario = () => {
               Discharge Change (%)
             </Label>
             <Badge variant="secondary" className="font-mono">
-              {discharge[0] > 0 ? '+' : ''}{discharge[0]}%
+              {dischargeChange[0] > 0 ? '+' : ''}{dischargeChange[0]}%
             </Badge>
           </div>
           <Slider
-            value={discharge}
-            onValueChange={setDischarge}
+            value={dischargeChange}
+            onValueChange={setDischargeChange}
             min={-50}
             max={50}
             step={5}
             className="w-full"
           />
+          <p className="text-xs text-muted-foreground">
+            Current: {inputs.discharge.toFixed(1)} m³/s → {(inputs.discharge * (1 + dischargeChange[0] / 100)).toFixed(1)} m³/s
+          </p>
         </div>
 
         <div className="space-y-3">
@@ -57,17 +72,20 @@ export const WhatIfScenario = () => {
               Air Temperature Change (°C)
             </Label>
             <Badge variant="secondary" className="font-mono">
-              {airTemp[0] > 0 ? '+' : ''}{airTemp[0]}°C
+              {airTempChange[0] > 0 ? '+' : ''}{airTempChange[0]}°C
             </Badge>
           </div>
           <Slider
-            value={airTemp}
-            onValueChange={setAirTemp}
+            value={airTempChange}
+            onValueChange={setAirTempChange}
             min={-10}
             max={10}
             step={0.5}
             className="w-full"
           />
+          <p className="text-xs text-muted-foreground">
+            Current: {inputs.airTemp.toFixed(1)}°C → {(inputs.airTemp + airTempChange[0]).toFixed(1)}°C
+          </p>
         </div>
 
         <div className="space-y-3">
@@ -76,17 +94,20 @@ export const WhatIfScenario = () => {
               Storage Change (%)
             </Label>
             <Badge variant="secondary" className="font-mono">
-              {storage[0] > 0 ? '+' : ''}{storage[0]}%
+              {storageChange[0] > 0 ? '+' : ''}{storageChange[0]}%
             </Badge>
           </div>
           <Slider
-            value={storage}
-            onValueChange={setStorage}
+            value={storageChange}
+            onValueChange={setStorageChange}
             min={-30}
             max={30}
             step={5}
             className="w-full"
           />
+          <p className="text-xs text-muted-foreground">
+            Current: {inputs.storage.toFixed(1)} MCM → {(inputs.storage * (1 + storageChange[0] / 100)).toFixed(1)} MCM
+          </p>
         </div>
       </div>
 
@@ -103,10 +124,9 @@ export const WhatIfScenario = () => {
 
       <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Usage:</strong> Adjust operational
-          parameters to explore their impact on predicted outflow temperature. This
-          helps operators understand sensitivity and make informed decisions for
-          compliance and ecological management.
+          <strong className="text-foreground">Baseline prediction:</strong>{" "}
+          {currentPrediction.predicted}°C. Adjust operational parameters above 
+          to explore their impact on outflow temperature.
         </p>
       </div>
     </div>

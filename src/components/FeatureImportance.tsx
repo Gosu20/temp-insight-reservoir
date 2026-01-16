@@ -8,32 +8,43 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import { useReservoir } from "@/contexts/ReservoirContext";
+
+const categoryColors: Record<string, string> = {
+  temporal: "hsl(var(--chart-1))",
+  meteorology: "hsl(var(--chart-2))",
+  hydrology: "hsl(var(--chart-3))",
+  operations: "hsl(var(--chart-4))",
+  other: "hsl(var(--chart-5))",
+};
 
 export const FeatureImportance = () => {
-  const data = [
-    { feature: "Seasonality", importance: 0.34, category: "temporal" },
-    { feature: "Air Temp", importance: 0.28, category: "meteorology" },
-    { feature: "Inflow Temp", importance: 0.18, category: "hydrology" },
-    { feature: "Storage", importance: 0.12, category: "operations" },
-    { feature: "Solar Radiation", importance: 0.11, category: "meteorology" },
-    { feature: "Discharge", importance: 0.09, category: "operations" },
-    { feature: "Wind Speed", importance: 0.06, category: "meteorology" },
-    { feature: "Lag T_out(t-1)", importance: 0.15, category: "temporal" },
-  ].sort((a, b) => b.importance - a.importance);
+  const { featureImportance, inputs } = useReservoir();
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      temporal: "hsl(var(--chart-1))",
-      meteorology: "hsl(var(--chart-2))",
-      hydrology: "hsl(var(--chart-3))",
-      operations: "hsl(var(--chart-4))",
-    };
-    return colors[category] || "hsl(var(--primary))";
+  // Convert importance to decimal for chart
+  const chartData = featureImportance.map(item => ({
+    ...item,
+    importanceDecimal: item.importance / 100,
+  }));
+
+  // Generate dynamic insight based on current conditions
+  const getInsight = () => {
+    const tempDiff = Math.abs(inputs.airTemp - inputs.tempOut);
+    if (tempDiff > 5) {
+      return `Air temperature is ${inputs.airTemp > inputs.tempOut ? 'above' : 'below'} water temperature by ${tempDiff.toFixed(1)}°C, increasing its influence on the forecast.`;
+    }
+    if (inputs.solarRad > 500) {
+      return `High solar radiation (${inputs.solarRad} W/m²) is driving significant surface heating effects.`;
+    }
+    if (inputs.discharge < 50) {
+      return `Low discharge rates increase residence time, amplifying storage and thermal stratification effects.`;
+    }
+    return `Current outflow temperature (${inputs.tempOut}°C) is the primary predictor due to strong thermal persistence.`;
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 text-xs">
+      <div className="flex gap-4 text-xs flex-wrap">
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-sm bg-chart-1" />
           <span className="text-muted-foreground">Temporal</span>
@@ -53,13 +64,13 @@ export const FeatureImportance = () => {
       </div>
 
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data} layout="vertical">
+        <BarChart data={chartData} layout="vertical">
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis
             type="number"
             stroke="hsl(var(--muted-foreground))"
             fontSize={12}
-            domain={[0, 0.4]}
+            domain={[0, 0.35]}
             tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
           />
           <YAxis
@@ -77,9 +88,9 @@ export const FeatureImportance = () => {
             }}
             formatter={(value: number) => `${(value * 100).toFixed(1)}%`}
           />
-          <Bar dataKey="importance" radius={[0, 4, 4, 0]}>
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={getCategoryColor(entry.category)} />
+          <Bar dataKey="importanceDecimal" radius={[0, 4, 4, 0]}>
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={categoryColors[entry.category] || "hsl(var(--primary))"} />
             ))}
           </Bar>
         </BarChart>
@@ -87,10 +98,8 @@ export const FeatureImportance = () => {
 
       <div className="rounded-lg bg-muted/50 p-3">
         <p className="text-xs text-muted-foreground">
-          <strong className="text-foreground">Key Insight:</strong> Seasonality and air
-          temperature are the dominant drivers of outflow temperature predictions,
-          contributing over 60% of the model's decision-making. Operations (discharge,
-          storage) have moderate influence, enabling what-if scenario planning.
+          <strong className="text-foreground">Key Insight:</strong>{" "}
+          {getInsight()}
         </p>
       </div>
     </div>

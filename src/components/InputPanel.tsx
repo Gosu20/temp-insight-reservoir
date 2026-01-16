@@ -2,13 +2,15 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Database } from "lucide-react";
+import { RefreshCw, Database, Calculator } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useReservoir } from "@/contexts/ReservoirContext";
 
 export const InputPanel = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const { inputs, updateInput, currentPrediction } = useReservoir();
 
   const handleRefresh = () => {
     setLoading(true);
@@ -19,6 +21,11 @@ export const InputPanel = () => {
         description: "Latest observations loaded from USGS NWIS",
       });
     }, 1500);
+  };
+
+  const handleInputChange = (key: keyof typeof inputs) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value) || 0;
+    updateInput(key, value);
   };
 
   return (
@@ -48,7 +55,8 @@ export const InputPanel = () => {
             <Input
               id="temp-out"
               type="number"
-              defaultValue="18.5"
+              value={inputs.tempOut}
+              onChange={handleInputChange('tempOut')}
               step="0.1"
               className="font-mono"
             />
@@ -61,7 +69,8 @@ export const InputPanel = () => {
             <Input
               id="temp-in"
               type="number"
-              defaultValue="16.2"
+              value={inputs.tempIn}
+              onChange={handleInputChange('tempIn')}
               step="0.1"
               className="font-mono"
             />
@@ -74,7 +83,8 @@ export const InputPanel = () => {
             <Input
               id="discharge"
               type="number"
-              defaultValue="142.5"
+              value={inputs.discharge}
+              onChange={handleInputChange('discharge')}
               step="0.1"
               className="font-mono"
             />
@@ -87,7 +97,8 @@ export const InputPanel = () => {
             <Input
               id="storage"
               type="number"
-              defaultValue="285.3"
+              value={inputs.storage}
+              onChange={handleInputChange('storage')}
               step="0.1"
               className="font-mono"
             />
@@ -105,7 +116,8 @@ export const InputPanel = () => {
             <Input
               id="air-temp"
               type="number"
-              defaultValue="22.8"
+              value={inputs.airTemp}
+              onChange={handleInputChange('airTemp')}
               step="0.1"
               className="font-mono"
             />
@@ -118,7 +130,8 @@ export const InputPanel = () => {
             <Input
               id="solar"
               type="number"
-              defaultValue="425"
+              value={inputs.solarRad}
+              onChange={handleInputChange('solarRad')}
               step="1"
               className="font-mono"
             />
@@ -131,7 +144,8 @@ export const InputPanel = () => {
             <Input
               id="wind"
               type="number"
-              defaultValue="3.2"
+              value={inputs.windSpeed}
+              onChange={handleInputChange('windSpeed')}
               step="0.1"
               className="font-mono"
             />
@@ -144,7 +158,8 @@ export const InputPanel = () => {
             <Input
               id="humidity"
               type="number"
-              defaultValue="65"
+              value={inputs.humidity}
+              onChange={handleInputChange('humidity')}
               step="1"
               className="font-mono"
             />
@@ -152,9 +167,20 @@ export const InputPanel = () => {
         </div>
       </Card>
 
-      <Button className="w-full" size="lg">
-        Generate Forecast
-      </Button>
+      {/* Live prediction indicator */}
+      <Card className="p-4 bg-primary/5 border-primary/20">
+        <div className="flex items-center gap-2 mb-2">
+          <Calculator className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium text-foreground">Live Prediction</span>
+          <div className="h-2 w-2 rounded-full bg-accent animate-pulse ml-auto" />
+        </div>
+        <div className="text-2xl font-bold text-primary">
+          {currentPrediction.predicted}°C
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          {currentPrediction.change >= 0 ? '+' : ''}{currentPrediction.change}°C from current
+        </div>
+      </Card>
     </div>
   );
 };

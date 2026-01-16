@@ -7,12 +7,13 @@ import { FeatureImportance } from "@/components/FeatureImportance";
 import { InputPanel } from "@/components/InputPanel";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { WhatIfScenario } from "@/components/WhatIfScenario";
+import { ReservoirProvider, useReservoir } from "@/contexts/ReservoirContext";
 import { Droplets, TrendingUp, Brain, Settings, Download } from "lucide-react";
 import { generatePythonBackend } from "@/lib/pythonBackendGenerator";
 import { toast } from "sonner";
 
-const Index = () => {
-  const [activeHorizon, setActiveHorizon] = useState<1 | 3 | 7>(1);
+const DashboardContent = () => {
+  const { activeHorizon, setActiveHorizon } = useReservoir();
 
   const handleDownloadBackend = async () => {
     toast.info("Generating Python backend...");
@@ -73,7 +74,7 @@ const Index = () => {
           {/* Main Content */}
           <div className="lg:col-span-8 space-y-6">
             {/* Metrics */}
-            <MetricsPanel activeHorizon={activeHorizon} />
+            <MetricsPanel />
 
             {/* Forecast Chart */}
             <Card className="p-6">
@@ -92,7 +93,7 @@ const Index = () => {
                   </TabsList>
                 </Tabs>
               </div>
-              <ForecastChart horizon={activeHorizon} />
+              <ForecastChart />
             </Card>
 
             {/* Interpretability */}
@@ -120,6 +121,14 @@ const Index = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const Index = () => {
+  return (
+    <ReservoirProvider>
+      <DashboardContent />
+    </ReservoirProvider>
   );
 };
 
