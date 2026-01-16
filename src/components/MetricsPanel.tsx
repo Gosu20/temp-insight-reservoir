@@ -1,9 +1,27 @@
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Activity, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, Target, AlertCircle } from "lucide-react";
 import { useReservoir } from "@/contexts/ReservoirContext";
 
 export const MetricsPanel = () => {
-  const { currentPrediction, activeHorizon } = useReservoir();
+  const { currentPrediction, activeHorizon, hasForecast } = useReservoir();
+
+  if (!hasForecast || !currentPrediction) {
+    return (
+      <div className="grid gap-4 md:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="p-4 bg-muted/30">
+            <div className="flex items-center justify-center h-16 text-muted-foreground">
+              <div className="text-center">
+                <AlertCircle className="h-5 w-5 mx-auto mb-1 opacity-50" />
+                <p className="text-xs">Awaiting forecast</p>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   const isIncrease = currentPrediction.change > 0;
 
   return (

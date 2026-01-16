@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Database, Calculator } from "lucide-react";
+import { RefreshCw, Database, Zap, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useReservoir } from "@/contexts/ReservoirContext";
@@ -10,7 +10,7 @@ import { useReservoir } from "@/contexts/ReservoirContext";
 export const InputPanel = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const { inputs, updateInput, currentPrediction } = useReservoir();
+  const { inputs, updateInput, generateForecast, isGenerating, hasForecast, currentPrediction } = useReservoir();
 
   const handleRefresh = () => {
     setLoading(true);
@@ -26,6 +26,14 @@ export const InputPanel = () => {
   const handleInputChange = (key: keyof typeof inputs) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value) || 0;
     updateInput(key, value);
+  };
+
+  const handleGenerateForecast = () => {
+    generateForecast();
+    toast({
+      title: "Forecast Generated",
+      description: "Predictions calculated using current inputs and scenario adjustments",
+    });
   };
 
   return (
@@ -167,20 +175,41 @@ export const InputPanel = () => {
         </div>
       </Card>
 
-      {/* Live prediction indicator */}
-      <Card className="p-4 bg-primary/5 border-primary/20">
-        <div className="flex items-center gap-2 mb-2">
-          <Calculator className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">Live Prediction</span>
-          <div className="h-2 w-2 rounded-full bg-accent animate-pulse ml-auto" />
-        </div>
-        <div className="text-2xl font-bold text-primary">
-          {currentPrediction.predicted}°C
-        </div>
-        <div className="text-xs text-muted-foreground mt-1">
-          {currentPrediction.change >= 0 ? '+' : ''}{currentPrediction.change}°C from current
-        </div>
-      </Card>
+      {/* Generate Forecast Button */}
+      <Button 
+        className="w-full" 
+        size="lg" 
+        onClick={handleGenerateForecast}
+        disabled={isGenerating}
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Generating...
+          </>
+        ) : (
+          <>
+            <Zap className="mr-2 h-5 w-5" />
+            Generate Forecast
+          </>
+        )}
+      </Button>
+
+      {/* Show current prediction if available */}
+      {hasForecast && currentPrediction && (
+        <Card className="p-4 bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+            <span className="text-sm font-medium text-foreground">Latest Prediction</span>
+          </div>
+          <div className="text-2xl font-bold text-primary">
+            {currentPrediction.predicted}°C
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {currentPrediction.change >= 0 ? '+' : ''}{currentPrediction.change}°C from current
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

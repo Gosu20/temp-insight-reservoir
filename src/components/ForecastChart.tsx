@@ -11,13 +11,19 @@ import {
 } from "recharts";
 import { useReservoir } from "@/contexts/ReservoirContext";
 import { useMemo } from "react";
+import { AlertCircle } from "lucide-react";
 
 export const ForecastChart = () => {
-  const { inputs, predictions, activeHorizon } = useReservoir();
+  const { forecastInputs, predictions, activeHorizon, hasForecast } = useReservoir();
 
   const data = useMemo(() => {
-    const baseTemp = inputs.tempOut;
-    
+    if (!forecastInputs || !predictions) {
+      return null;
+    }
+
+    const baseTemp = forecastInputs.tempOut;
+    const pred = predictions[activeHorizon];
+
     // Generate historical data (last 7 days with some variation)
     const historical = Array.from({ length: 7 }, (_, i) => ({
       day: `Day ${i - 6}`,
@@ -36,17 +42,13 @@ export const ForecastChart = () => {
       lower: undefined as number | undefined,
     };
 
-    // Generate forecast based on actual prediction model
-    const pred = predictions[activeHorizon];
+    // Generate forecast
     const forecast = Array.from({ length: activeHorizon }, (_, i) => {
-      // Interpolate between current and final prediction
       const progress = (i + 1) / activeHorizon;
       const tempChange = pred.change * progress;
       const predictedTemp = baseTemp + tempChange;
-      
-      // Uncertainty grows with horizon
       const uncertainty = 0.5 + (i + 1) * 0.3;
-      
+
       return {
         day: `Day +${i + 1}`,
         actual: undefined as number | undefined,
@@ -57,7 +59,19 @@ export const ForecastChart = () => {
     });
 
     return [...historical, current, ...forecast];
-  }, [inputs.tempOut, predictions, activeHorizon]);
+  }, [forecastInputs, predictions, activeHorizon]);
+
+  if (!hasForecast || !data) {
+    return (
+      <div className="flex items-center justify-center h-[350px] bg-muted/30 rounded-lg">
+        <div className="text-center text-muted-foreground">
+          <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">Enter inputs and click "Generate Forecast"</p>
+          <p className="text-xs mt-1">to see temperature predictions</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={350}>
@@ -85,12 +99,12 @@ export const ForecastChart = () => {
             border: "1px solid hsl(var(--border))",
             borderRadius: "var(--radius)",
           }}
-          formatter={(value: number | undefined) => 
+          formatter={(value: number | undefined) =>
             value !== undefined ? [`${value}°C`, ""] : ["-", ""]
           }
         />
         <Legend />
-        
+
         {/* Confidence interval area */}
         <Area
           type="monotone"
@@ -110,7 +124,7 @@ export const ForecastChart = () => {
           name="95% CI Lower"
           connectNulls={false}
         />
-        
+
         {/* Historical actual values */}
         <Line
           type="monotone"
@@ -121,7 +135,7 @@ export const ForecastChart = () => {
           name="Historical"
           connectNulls={false}
         />
-        
+
         {/* Predicted values */}
         <Line
           type="monotone"
